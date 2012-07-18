@@ -22,4 +22,13 @@ For the moment,
 the videos and papers are stored on UbuntuOne (e-mail perrnicolas, password G..G..0). The papers are also stored on this git repo, 
 but not the videos.
 
+---------------
+The webpage is hosted on www.nicolasperrin.net by the German company InterNetworX (https://www.inwx.de/).
+My account there:
+Username: nicolasperrin
+pwd: dblgf0
 
+To manage the website and upload files:
+webftp3.web-server.biz
+usr = kd25979
+pwd = dblgf0

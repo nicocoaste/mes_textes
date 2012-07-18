@@ -1,0 +1,335 @@
+% This file was created with JabRef 2.3.1.
+% Encoding: UTF-8
+
+@ARTICLE{perrin:IJRR:12,
+  author = {N. Perrin and C. Ott and J. Englsberger and O. Stasse and F. Lamiraux},
+  title = {A Continuous Approach to Legged Locomotion Planning}, 
+  journal = {SUBMITTED to the International Journal of Robotics Research (IJRR)},
+  year = {2012},
+  abstract = {Legged locomotion planning can often be reduced to the search of finite sequences of contacts between the
+robot and the ground. We address this problem, using an original, continuous approach. We first demonstrate how this intrinsically discrete problem can be made continuous, and then present two applications: an experiment of vision-based reactive footstep planning with the DLR-Biped robot, and a simulation of non-gaited locomotion planning with a hexapod robot.}
+}
+
+@ARTICLE{perrin:AR:12,
+  author = {N. Perrin and O. Stasse and F. Lamiraux and E. Yoshida},
+  title = {Humanoid motion generation and swept volumes: theoretical bounds for safe steps},
+  journal = {SUBMITTED to Advanced Robotics},
+  year = {2012},
+  abstract = {In the context of humanoid robot footstep planning based on a continuous action set, we conduct
+an analysis of the sensitivity of a simple walking pattern generator. Given a variation of an input
+vector, we calculate a bound on the variation of the volume swept by the robot lower body during
+the corresponding actions (steps). After numerical evaluations, we discuss the potential applications
+of such a bound.}
+}
+
+@inproceedings{perrin:wafr:12,
+ author = {N. Perrin},
+ title = {From Discrete to Continuous Motion Planning},
+ booktitle = {Tenth International Workshop on the Algorithmic Foundations of Robotics (WAFR'12)},
+ year = {2012},
+ url = {http://ubuntuone.com/2phb7wl56vMHSkbuXuJH0r},
+ abstract = {In this paper, we demonstrate an equivalence between a large class of discrete
+motion planning problems, and piano mover’s problems, which we refer to as
+"continuous motion planning problems". We first prove that under some assumptions,
+discrete motion planning in d dimensions can be transformed into continuous
+motion planning in 2d+1 dimensions. Then we prove a more specific, similar
+equivalence for which the number of dimensions of the configuration space does
+not necessarily have to be increased. We study two simple cases where this theorem
+applies, and show that it can lead to original and efficient motion planning algorithms,
+which could probably be applied to a wide range of multi-contact planning
+problems. We apply this equivalence to a simulation of legged locomotion planning
+for a hexapod robot.}
+}
+
+
+@inproceedings{perrin:icra:12,
+ author = {N. Perrin and O. Stasse and F. Lamiraux and Y.~J. Kim and D. Manocha},
+ title = {Real-time footstep planning for humanoid robots among {3D} obstacles using a hybrid bounding box},
+ booktitle = {IEEE International Conference on Robotics and Automation (ICRA'12)},
+ year = {2012},
+ url = {http://ubuntuone.com/79Vh8tWVfxfUapsz2qo9qA},  
+ abstract = {In this paper we introduce a new bounding box
+method for footstep planning for humanoid robots. Similar
+to the classic bounding box method (which uses a single
+rectangular box to encompass the robot) it is computationally
+efficient, easy to implement and can be combined with any
+rigid body motion planning library. However, unlike the classic
+bounding box method, our method takes into account the
+stepping over capabilities of the robot, and generates precise leg
+trajectories to avoid obstacles on the ground. We demonstrate
+that this method is well suited for footstep planning in cluttered
+environments.}
+}
+
+@ARTICLE{perrin:tro:11,
+  author = {N. Perrin and O. Stasse and L. Baudouin and F. Lamiraux and E. Yoshida},
+  title = {Fast humanoid robot collision-free footstep planning using swept volume approximations},
+  journal = {IEEE Transactions on Robotics (T-RO)},
+  volume = {28},
+  number = {2},
+  year = {2012},
+  doi = {10.1109/TRO.2011.2172152},
+  url = {http://ubuntuone.com/3Qi2M3QMzEanjDxdoryvfl},
+  abstract = {In this paper, we propose a novel and coherent
+framework for fast footstep planning for legged robots on a
+flat ground with 3D obstacle avoidance. We use swept volume
+approximations computed offline in order to considerably reduce
+the time spent in collision checking during the online planning
+phase, in which an RRT variant is used to find collision-free
+sequences of half-steps (produced by a specific walking pattern
+generator). Then, an original homotopy is used to smooth the
+sequences into natural motions avoiding gently the obstacles. The
+results are experimentally validated on the robot HRP-2.}
+}
+
+@PhDThesis{ perrinthesis,
+  author = "N. Perrin",
+  title = "Footstep planning for humanoid robots: discrete and continuous approaches",
+  school = "Paul Sabatier University, Toulouse",
+  year = "2011",
+  url = {http://ubuntuone.com/5pkEsMvK32W29J5fCrNjQa},
+  abstract = {In this thesis we investigate two types of approaches for footstep planning for humanoid
+robots: on one hand discrete approaches where the robot has only a finite set of
+possible steps, and on the other hand approaches where the robot uses continuous
+feasibility regions. We study these problems both on a theoretical and practical level. In
+particular, we describe two original, coherent and efficient methods for footstep planning,
+one in the discrete case (Chapter 5), and one in the continuous case (Chapter 6). We
+validate these methods in simulation and with several experiments on the robot HRP-2.}   
+}
+
+@CONFERENCE{Perrin:WorkshopHumanoids:11,
+  author = {N. Perrin and O. Stasse and L. Baudouin and F. Lamiraux and E. Yoshida},
+  title = {Sound and fast footstep planning for humanoid robots},
+  booktitle = {IEEE/RAS Int. Conf. on Humanoid Robotics, Workshop on humanoid service robot navigation in crowded and dynamic environments},
+  year = {2011},
+  url = {http://ubuntuone.com/2GuvHG26MGlXDlK5NIv8eq},
+  abstract = {In this paper we present some concepts for sound
+and fast footstep planning. The soundness is achieved with a
+two-stage trajectory generation process that uses a smoothing
+homotopy. The fastness is achieved with swept volume approximations
+precomputed offline.}
+}
+
+
+@inproceedings{baudouin:humanoids:11,
+ author = {L. Baudouin and N. Perrin and T. Moulard and F. Lamiraux and O. Stasse and E. Yoshida},
+ title = {Real-time Replanning Using 3D Environment for Humanoid Robot},
+ booktitle = {IEEE/RAS International Conference on Humanoid Robotics (Humanoids'11)},
+ year = {2011},
+ url = {http://ubuntuone.com/6zyz487WVECpyW88tEfQz5},
+ abstract = {In this paper, we illustrate experimentally an original
+real-time replanning scheme and architecture for humanoid
+robot reactive walking. Based on a dense set of actions, our
+approach uses a large panel of the humanoid robot capabilities
+and is particularly well suited for 3D collision avoidance. Indeed
+A-* approaches becomes difficult in such situation, thus the
+method demonstrated here relies on RRT. Combined with an
+approximation of the volume swept by the robot legs while
+walking, our method is able to cope with 3D obstacles while
+maintaining real-time computation. We experimentally validate
+our approach on the robot HRP-2.}
+}
+
+@CONFERENCE{baudouin:WorkshopIros:11,
+  author = {L. Baudouin and N. Perrin and O. Stasse and T. Moulard and F. Lamiraux and E. Yoshida},
+  title = {Real-time Walking Path Planning with 3D Collision Avoidance},
+  booktitle = {IEEE International Conference on Intelligent Robots and Systems, Workshop on Progress and Open Problems in Motion Planning},
+  year = {2011},
+  url = {http://ubuntuone.com/60JcRikur4gzndZAXL2BKP},
+  abstract = {We illustrate an original real-time replanning
+scheme experimentally for humanoid robot reactive walking.
+Footsteps are planned as a sequence of “half-steps” that can
+be easily integrated with randomized planning methods such
+as RRT. Combined with an approximation of the volume swept
+by the robot legs during dynamic walking, our method is able
+to cope with the collision avoidance for 3D obstacles while
+maintaining real-time computation. We experimentally validate
+our approach on the robot HRP-2.}
+}
+
+@inproceedings{perrin:iros:11,
+ author = {N. Perrin and O. Stasse and F. Lamiraux and E. Yoshida},
+ title = {Weakly collision-free paths for continuous humanoid footstep planning},
+ booktitle = {IEEE International Conference on Intelligent Robots and Systems (IROS'11)},
+ year = {2011},
+ doi = {10.1109/IROS.2011.6048120},
+ url = {http://ubuntuone.com/1xs3AlxBi9baSEwUsUH080},  
+ abstract = {In this paper we demonstrate an original equivalence between footstep planning problems,
+where discrete sequences of steps are searched for, and the more classical problem 
+of motion planning for a 2D rigid shape, where a continuous collision-free path has to be found.
+This equivalence enables a lot of classical motion planning techniques (such as PRM, RRT, etc.)
+to be applied almost effortlessly to the specific problem of footstep planning for a humanoid robot.}
+ }
+
+@inproceedings{perrin:icra:11,
+ author = {N. Perrin and O. Stasse and F. Lamiraux and E. Yoshida},
+ title = {A biped walking pattern generator based on "half-steps" for dimensionality reduction},
+ booktitle = {IEEE International Conference on Robotics and Automation (ICRA'11)}, 
+ year = {2011},
+ doi = {10.1109/ICRA.2011.5979917},
+ url = {http://ubuntuone.com/1UKPaUkaui6xUWSGGsaO62},  
+ abstract = {We present a new biped walking pattern generator based on "half-steps". Its key features are a) a 3-dimensional parametrization of the input space, and b) a simple homotopy that efficiently smooths the gait trajectory corresponding to a fixed sequence of steps. We show how these features can be ideally combined in the framework of sampling-based gait planning. We apply our approach to the robot HRP-2 and are able to quickly produce smooth and dynamically stable trajectories that are solutions to a difficult problem of gait planning.}
+ }
+
+@TechReport{ adaptapprox10,
+ author = {N. Perrin and O. Stasse and F. Lamiraux and E. Yoshida},
+ title = {Adaptive sampling-based approximation of the sign of multivariate real-valued functions},
+ year = {2010},
+ url = {http://hal.archives-ouvertes.fr/docs/00/54/48/91/PDF/approx.pdf},
+ abstract = {In this technical report, we present an algorithm which approximates the sign of multivariate real-valued functions through adaptive sampling, and demonstrate a convergence result. The algorithm was specifically designed for real-time robotics applications where quick evaluations are often needed.}
+}
+
+@inproceedings{herdt:iros:10,
+ author = {A. Herdt and N. Perrin and P.-B. Wieber},
+ title = {Walking without thinking about it},
+ booktitle = {IEEE International Conference on Intelligent Robots and Systems (IROS'10)}, 
+ pages = {190--195},
+ year = {2010},
+ doi = {10.1109/IROS.2010.5654429},
+ url = {http://ubuntuone.com/0ommVgWCTc6kuvJgaaZUF9},  
+ abstract = {We demonstrate in this paper our motion generation
+sheme for the generation of stable bipedal walking motions
+and we expand it to enhance its flexibility and independency.
+An algorithm for the control of appropriate orientations of
+the feet and the trunk permits the robot to turn in a natural
+and safe way. Polygonal constraints on the positions of the
+computed feet positions serve to improve its reliability. A logic
+for the succession of the support phases and an algorithm for
+the automatic control of their orientations bridge the gap to
+more autonomy and to more practicability.}
+ }
+
+@inproceedings{perrin:icra:10,
+ author = {N. Perrin and O. Stasse and F. Lamiraux and E. Yoshida},
+ title = {Approximation of Feasibility Tests for Reactive Walk on HRP-2},
+ booktitle = {IEEE International Conference on Robotics and Automation (ICRA'10)}, 
+ pages={4243-4248}, 
+ year = {2010},
+ doi = {10.1109/ROBOT.2010.5509395},
+ url = {http://ubuntuone.com/3kOqnHcbqaFSrHE9eBnPTZ},  
+ abstract = {We present here an original approach to test the feasibility of footsteps
+for a given walking pattern generator. 
+It is based on a new approximation algorithm
+intended to cope with this specific problem. 
+The result obtained is used on the robot HRP-2, and enables it to guess a step feasibility
+40,000 times faster (in 9 microseconds) than with the normal verification process. As a
+consequence some advance is made towards fast online motion
+(re)planning based on a continuous set of possible steps.}
+ }
+
+@inproceedings{stasse:humanoids:09,
+ author = {O. Stasse and P. Evrard and N. Perrin and N. Mansard and A. Kheddar},
+ title = {Fast foot prints re-planning and motion generation during walking in physical human-humanoid interaction},
+ booktitle = {IEEE/RAS International Conference on Humanoid Robotics (Humanoids'09)}, 
+ pages={284--289},
+ year = {2009},
+ doi = {10.1109/ICHR.2009.5379563},
+ url = {http://ubuntuone.com/0Z7tJREH5hYdAczKYBa6oZ},
+ abstract = {In this paper a system allowing real-time interaction
+between a human and a humanoid robot while walking is
+presented. The aim of this work is to integrate humanoid robots
+into collaborative working environment. Co-located realization
+of a task is one instance of such collaboration. To achieve such
+task whole-body motion generation while keeping balance is
+mandatory. This is obtained using a real-time pattern generator
+allowing on-line foot-print modification integrated in a stack of
+controllers. Several experiments of direct interaction between
+a human and a HRP-2 humanoid robot illustrates the results.}
+ }
+
+@CONFERENCE{Stasse:ROMAN:09,
+  author = {O. Stasse and N. Perrin and P.-B. Wieber and N. Mansard and F. Lamiraux},
+  title = {Very fast decision making for whole body motion generation with humanoid
+	robots},
+  booktitle = {IEEE RO-MAN Workshop on Human-Synergy},
+  year = {2009},
+  url = {http://ubuntuone.com/4NfPfaEyvuO3zX9j5mqp84},
+  abstract = {High speed decision making to generate motion for
+humanoid robot is mandatory to deal with highly changing
+environments. Such contexts include human-robot interaction or
+emergency situations. We focus here on the problem of balancing.
+At first we explain a method allowing to plan very quickly footsteps.
+It is based on building an approximation function which
+takes as an input a transition between two steps and output
+a positive value if the transition is possible. An experiment on
+human-humanoid robot interaction illustrates the approach. In
+second we present a solver specifically targeted towards solving
+optimization problem for walking.}
+}
+
+
+@CONFERENCE{Perrin:RSJ:09,
+  author = {N. Perrin and O. Stasse and F. Lamiraux and P. Evrard and A. Kheddar},
+  title = {On the Problem of Online Footsteps Correction for Humanoid Robots},
+  booktitle = {The 27th annual Conference of the Robotics Society of Japan},
+  year = {2009},
+  note = {September 15-17, Yokohama, Japan},
+  url = {http://ubuntuone.com/3dOItFGpaZH2Li2iRhe8t7},
+  abstract = {In humanoid robotics, many applications involving walking require unfeasible footsteps to be
+corrected very quickly. In this paper, we introduce and discuss that issue, and expose our preliminary work
+and results on the topic.}
+}
+
+@ARTICLE{CJP-lmcs08,
+  author = {Comon{-}Lundh, Hubert and Jacquemard, Florent and Perrin, Nicolas},
+  title = {Visibly Tree Automata with Memory and Constraints},
+  journal = {Logical Methods in Computer Science},
+  year = {2008},
+  volume = {4},
+  number = {2:8},
+  pages={284--289},
+  month = jun,
+  doi = {10.2168/LMCS-4(2:8)2008},
+  url = {http://ubuntuone.com/32qYgEmrdrQnTrLBZTUu28},
+  abstract = {Tree automata with one memory have been introduced in 2001. They generalize
+both pushdown (word) automata and the tree automata with constraints of equality
+between brothers of Bogaert and Tison. Though it has a decidable emptiness problem,
+the main weakness of this model is its lack of good closure properties.
+We propose a generalization of the visibly pushdown automata of Alur and Madhusudan
+to a family of tree recognizers which carry along their (bottom-up) computation an
+auxiliary unbounded memory with a tree structure (instead of a symbol stack). In other
+words, these recognizers, called Visibly Tree Automata with Memory (VTAM) define a
+subclass of tree automata with one memory enjoying Boolean closure properties. We show
+in particular that they can be determinized and the problems like emptiness, membership,
+inclusion and universality are decidable for VTAM. Moreover, we propose several
+extensions of VTAM whose transitions may be constrained by different kinds of tests between
+memories and also constraints a la Bogaert and Tison. We show that some of these
+classes of constrained VTAM keep the good closure and decidability properties, and we
+demonstrate their expressiveness with relevant examples of tree languages.}
+}
+
+
+@INPROCEEDINGS{CJP-fossacs07,
+  author = {Comon{-}Lundh, Hubert and Jacquemard, Florent and Perrin, Nicolas},
+  title = {Tree Automata with Memory, Visibility and Structural Constraints},
+  booktitle = {10th {I}nternational {C}onference on {F}oundations
+	of {S}oftware {S}cience and {C}omputation {S}tructures ({FoSSaCS}'07)},
+  year = {2007},
+  editor = {Seidl, Helmut},
+  series = {Lecture Notes in Computer Science},
+  pages = {168-182},
+  address = {Braga, Portugal},
+  month = mar,
+  publisher = {Springer},
+  doi = {10.1007/978-3-540-71389-0_13},
+  url = {http://ubuntuone.com/7bwApJ66ANcJTtAnSs8OKS},
+  abstract = {Tree automata with one memory have been introduced in
+2001. They generalize both pushdown (word) automata and the tree
+automata with constraints of equality between brothers of Bogaert and
+Tison. Though it has a decidable emptiness problem, the main weakness
+of this model is its lack of good closure properties.
+We propose a generalization of the visibly pushdown automata of Alur
+and Madhusudan to a family of tree recognizers which carry along their
+(bottom-up) computation an auxiliary unbounded memory with a tree
+structure (instead of a symbol stack). In other words, these recognizers,
+called visibly Tree Automata with Memory (VTAM) define a subclass of
+tree automata with one memory enjoying Boolean closure properties. We
+show in particular that they can be determinized and the problems like
+emptiness, inclusion and universality are decidable for VTAM. Moreover,
+we propose an extension of VTAM whose transitions may be constrained
+by structural equality and disequality tests between memories, and show
+that this extension preserves the good closure and decidability properties.}
+}
+
+
+

@@ -1,0 +1,839 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<head>
+<title>JabRef References output</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script type="text/javascript">
+<!--
+// QuickSearch script for JabRef HTML export 
+// Version: 2.0
+//
+// Copyright (c) 2006-2008, Mark Schenk
+//
+// This software is distributed under a Creative Commons Attribution 3.0 License
+// http://creativecommons.org/licenses/by/3.0/
+
+// Some features:
+// + optionally searches Abstracts and Reviews
+// + allows RegExp searches
+//   e.g. to search for entries between 1980 and 1989, type:  198[0-9]
+//   e.g. for any entry ending with 'symmetry', type:  symmetry$
+//   e.g. for all reftypes that are books: ^book$, or ^article$
+//   e.g. for entries by either John or Doe, type john|doe
+// + easy toggling of Abstract/Review/BibTeX
+
+// Search settings
+var searchAbstract = true;
+var searchReview = true;
+
+// Speed optimisation introduced some esoteric problems with certain RegExp searches
+// e.g. if the previous search is 200[-7] and the next search is 200[4-7] then the search doesn't work properly until the next 'keyup'
+// hence the searchOpt can be turned off for RegExp adepts
+var searchOpt = true;
+
+if (window.addEventListener) {
+	window.addEventListener("load",initSearch,false); }
+else if (window.attachEvent) {
+	window.attachEvent("onload", initSearch); }
+
+function initSearch() {
+	// basic object detection
+	if(!document.getElementById || !document.getElementsByTagName) { return; }
+	if (!document.getElementById('qstable')||!document.getElementById('qs')) { return; }
+
+	// find QS table and appropriate rows
+	searchTable = document.getElementById('qstable');
+	var allRows = searchTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+	// split all rows into entryRows and infoRows (e.g. abstract, review, bibtex)
+	entryRows = new Array();
+	infoRows = new Array(); absRows = new Array(); revRows = new Array();
+
+	for (var i=0, k=0, j=0; i<allRows.length;i++) {
+		if (allRows[i].className.match(/entry/)) {
+			entryRows[j++] = allRows[i];
+		} else {
+			infoRows[k++] = allRows[i];
+			// check for abstract/review
+			if (allRows[i].className.match(/abstract/)) {
+				absRows.push(allRows[i]);
+			} else if (allRows[i].className.match(/review/)) {
+				revRows.push(allRows[i]);
+			}
+		}
+	}
+
+	//number of entries and rows
+	numRows = allRows.length;
+	numEntries = entryRows.length;
+	numInfo = infoRows.length;
+	numAbs = absRows.length;
+	numRev = revRows.length;
+
+	//find the query field
+	qsfield = document.getElementById('qsfield');
+
+	// previous search term; used for speed optimisation
+	prevSearch = '';
+
+	//find statistics location
+	stats = document.getElementById('stat');
+	setStatistics(-1);
+
+	// creates the appropriate search settings
+	createQSettingsDialog();
+
+	// shows the searchfield
+	document.getElementById('qs').style.display = 'block';
+	document.getElementById('qsfield').onkeyup = testEvent;
+}
+
+function quickSearch(tInput){
+
+	 if (tInput.value.length == 0) {
+		showAll();
+		setStatistics(-1);
+		qsfield.className = '';
+		return;
+	} else {
+		// only search for valid RegExp
+		try {
+			var searchText = new RegExp(tInput.value,"i")
+			closeAllInfo();
+			qsfield.className = '';
+		}
+		catch(err) {
+			prevSearch = tInput.value;
+			qsfield.className = 'invalidsearch';
+			return;
+		}
+	}
+	
+	// count number of hits
+	var hits = 0;
+
+	// start looping through all entry rows
+	for (var i = 0; cRow = entryRows[i]; i++){
+
+		// only show search the cells if it isn't already hidden OR if the search term is getting shorter, then search all
+		// some further optimisation is possible: if the search string is getting shorter, and the row is already visible, skip it. Then be careful with hits!
+		if(!searchOpt || cRow.className.indexOf('noshow')==-1 || tInput.value.length <= prevSearch.length){
+			var found = false; 
+
+			var inCells = cRow.getElementsByTagName('td');
+			var numCols = inCells.length;
+				
+			for (var j=0; j<numCols; j++) {
+				cCell = inCells[j];
+				var t = cCell.innerText?cCell.innerText:getTextContent(cCell);
+				if (t.search(searchText) != -1){ 
+					found=true; 
+					break;
+				} 
+			}
+
+			// look for further hits in Abstract and Review
+			if(!found) {
+				var articleid = cRow.id;
+				if(searchAbstract && (abs = document.getElementById('abs_'+articleid))) {
+					if (getTextContent(abs).search(searchText) != -1){ found=true; } 
+				}
+				if(searchReview && (rev = document.getElementById('rev_'+articleid))) {
+					if (getTextContent(rev).search(searchText) != -1){ found=true; } 
+				}
+			}
+			
+			if(found) {
+				cRow.className = 'entry show';
+				hits++;
+			} else {
+				cRow.className = 'entry noshow';
+			}
+		}
+	}
+
+	// update statistics
+	setStatistics(hits)
+	
+	// set previous search value
+	prevSearch = tInput.value;
+}
+
+function toggleInfo(articleid,info) {
+
+	var entry = document.getElementById(articleid);
+	var abs = document.getElementById('abs_'+articleid);
+	var rev = document.getElementById('rev_'+articleid);
+	var bib = document.getElementById('bib_'+articleid);
+	
+	if (abs && info == 'abstract') {
+		if(abs.className.indexOf('abstract') != -1) {
+		abs.className.indexOf('noshow') == -1?abs.className = 'abstract noshow':abs.className = 'abstract';
+		}
+	} else if (rev && info == 'review') {
+		if(rev.className.indexOf('review') != -1) {
+		rev.className.indexOf('noshow') == -1?rev.className = 'review noshow':rev.className = 'review';
+		}
+	} else if (bib && info == 'bibtex') {
+		if(bib.className.indexOf('bibtex') != -1) {
+		bib.className.indexOf('noshow') == -1?bib.className = 'bibtex noshow':bib.className = 'bibtex';
+		}		
+	} else { 
+		return;
+	}
+
+	// check if one or the other is available
+	var revshow = false;
+	var absshow = false;
+	var bibshow = false;
+	(abs && abs.className.indexOf('noshow') == -1)? absshow = true: absshow = false;
+	(rev && rev.className.indexOf('noshow') == -1)? revshow = true: revshow = false;	
+	(bib && bib.className == 'bibtex')? bibshow = true: bibshow = false;
+	
+	// highlight original entry
+	if(entry) {
+		if (revshow || absshow || bibshow) {
+		entry.className = 'entry highlight show';
+		} else {
+		entry.className = 'entry show';
+		}		
+	}
+	
+	// When there's a combination of abstract/review/bibtex showing, need to add class for correct styling
+	if(absshow) {
+		(revshow||bibshow)?abs.className = 'abstract nextshow':abs.className = 'abstract';
+	} 
+	if (revshow) {
+		bibshow?rev.className = 'review nextshow': rev.className = 'review';
+	}
+	
+}
+
+function setStatistics (hits) {
+	if(hits < 0) { hits=numEntries; }
+	if(stats) { stats.firstChild.data = hits + '/' + numEntries}
+}
+
+function getTextContent(node) {
+	// Function written by Arve Bersvendsen
+	// http://www.virtuelvis.com
+	
+	if (node.nodeType == 3) {
+	return node.nodeValue;
+	} // text node
+	if (node.nodeType == 1) { // element node
+	var text = [];
+	for (var chld = node.firstChild;chld;chld=chld.nextSibling) {
+		text.push(getTextContent(chld));
+	}
+	return text.join("");
+	} return ""; // some other node, won't contain text nodes.
+}
+
+function showAll(){
+	// first close all abstracts, reviews, etc.
+	closeAllInfo();
+
+	for (var i = 0; i < numEntries; i++){
+		entryRows[i].className = 'entry show'; 
+	}
+}
+
+function closeAllInfo(){
+	for (var i=0; i < numInfo; i++){
+		if (infoRows[i].className.indexOf('noshow') ==-1) {
+			infoRows[i].className = infoRows[i].className + ' noshow';
+		}
+	}
+}
+
+function testEvent(e){
+	if (!e) var e = window.event;
+	quickSearch(this);
+}
+
+function clearQS() {
+	qsfield.value = '';
+	quickSearch(qsfield);
+}
+
+function redoQS(){
+	showAll();
+	quickSearch(qsfield);
+}
+
+// Create Search Settings
+
+function toggleQSettingsDialog() {
+
+	var qssettings = document.getElementById('qssettings');
+	
+	if(qssettings.className.indexOf('active')==-1) {
+		qssettings.className = 'active';
+
+		if(absCheckBox && searchAbstract == true) { absCheckBox.checked = 'checked'; }
+		if(revCheckBox && searchReview == true) { revCheckBox.checked = 'checked'; }
+
+	} else {
+		qssettings.className= '';
+	}
+}
+
+function createQSettingsDialog(){
+	var qssettingslist = document.getElementById('qssettings').getElementsByTagName('ul')[0];
+	
+	if(numAbs!=0) {
+		var x = document.createElement('input');
+		x.id = "searchAbs";
+		x.type = "checkbox";
+		x.onclick = toggleQSetting;
+		var y = qssettingslist.appendChild(document.createElement('li')).appendChild(document.createElement('label'));
+		y.appendChild(x);
+		y.appendChild(document.createTextNode('search abstracts'));		
+	}
+	if(numRev!=0) {
+		var x = document.createElement('input');
+		x.id = "searchRev";
+		x.type = "checkbox";		
+		x.onclick = toggleQSetting;
+		var y = qssettingslist.appendChild(document.createElement('li')).appendChild(document.createElement('label'));		
+		y.appendChild(x);		
+		y.appendChild(document.createTextNode('search reviews'));
+	}
+		
+	// global variables
+	absCheckBox = document.getElementById('searchAbs');
+	revCheckBox = document.getElementById('searchRev');
+	
+	// show search settings
+	if(absCheckBox||revCheckBox) {
+		document.getElementById('qssettings').style.display = 'block';
+	}
+}
+
+function toggleQSetting() {
+	if(this.id=='searchAbs') { searchAbstract = !searchAbstract; }
+	if(this.id=='searchRev') { searchReview = !searchReview; }
+	redoQS()
+} 
+-->
+</script>
+<style type="text/css">
+body { background-color: white; font-family: "Trebuchet MS", Arial, sans-serif; font-size: 12px; line-height: 1.2; padding: 1em; color: #2E2E2E; }
+
+#qs { width: auto; border-style: solid; border-color: gray; border-width: 1px 1px 0px 1px; padding: 0.5em 0.5em; display:none; position:relative; }
+#qs form { padding: 0px; margin: 0px; }
+#qs form p { padding: 0px; margin: 0px; }
+
+.invalidsearch { background-color: red; }
+
+table { border: 1px gray solid; width: 100%; empty-cells: show; }
+th, td { border: 1px gray solid; padding: 0.5em; vertical-align: top;  }
+td { text-align: left; vertical-align: top; }
+th { background-color: #EFEFEF; }
+
+td a { color: navy; text-decoration: none; }
+td a:hover  { text-decoration: underline; }
+
+tr.noshow { display: none;}
+
+tr.highlight td { background-color: #F1F1F1; border-top: 2px black solid; font-weight: bold; }
+tr.abstract td, tr.review td, tr.bibtex td { background-color: #F1F1F1; border-bottom: 2px black solid; }
+tr.nextshow td { border-bottom: 1px gray solid; }
+
+tr.bibtex pre { width: 100%; overflow: auto;}
+
+p.infolinks { margin: 0.5em 0em 0em 0em; padding: 0px; }
+
+#qssettings { padding: 0.5em; position: absolute; top: 0.2em; right: 0.2em; border: 1px gray solid; background-color: white; display: none; }
+#qssettings p { font-weight: bold; cursor: pointer; }
+#qssettings ul { display: none; list-style-type: none; padding-left: 0; margin: 0; }
+#qssettings.active ul { display: block; }
+
+@media print {
+	p.infolinks, #qssettings, #qs { display: none !important; }
+	table { border-width: 0px; }
+	tr { page-break-inside: avoid; }
+	tr > * + * + * + * + * {display: none; }
+	thead tr::before { content: "Reference"; border: 1px gray solid; padding: 0.5em; vertical-align: top; font-weight: bold; text-align: center; display: table-cell; background-color: #EFEFEF; }
+	tr[id]::before { content: attr(id); display: table-cell; border: 1px gray solid; padding: 0.5em; vertical-align: top; font-style: italic; }
+}
+</style>
+</head>
+<body>
+
+<div id="qs">
+	<form action="">
+	<p>QuickSearch: <input type="text" name="qsfield" id="qsfield" autocomplete="off" title="Allows plain text as well as RegExp searches" /><input type="button" onclick="clearQS()" value="clear" />&nbsp; Number of matching entries: <span id="stat">0</span>.</p>
+	<div id="qssettings">
+		<p onclick="toggleQSettingsDialog()">Search Settings</p>
+		<ul></ul>
+	</div>
+	</form>
+</div>
+<table id="qstable" border="1">
+<thead><tr><th width="20%">Author</th><th width="30%">Title</th><th width="5%">Year</th><th width="30%">Journal/Proceedings</th><th width="10%">Reftype</th><th width="5%">DOI/URL</th></tr></thead>
+<tbody><tr id="perrin:IJRR:12" class="entry">
+	<td>Perrin, N., Ott, C., Englsberger, J., Stasse, O. &amp; Lamiraux, F.</td>
+	<td>A Continuous Approach to Legged Locomotion Planning <p class="infolinks">[<a href="javascript:toggleInfo('perrin:IJRR:12','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('perrin:IJRR:12','bibtex')">BibTeX</a>]</p></td>
+	<td>2012</td>
+	<td>SUBMITTED to the International Journal of Robotics Research (IJRR)&nbsp;</td>
+	<td>article</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="abs_perrin:IJRR:12" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Legged locomotion planning can often be reduced to the search of finite sequences of contacts between the robot and the ground. We address this problem, using an original, continuous approach. We first demonstrate how this intrinsically discrete problem can be made continuous, and then present two applications: an experiment of vision-based reactive footstep planning with the DLR-Biped robot, and a simulation of non-gaited locomotion planning with a hexapod robot.</td>
+</tr>
+<tr id="bib_perrin:IJRR:12" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{perrin:IJRR:12,
+  author = {N. Perrin and C. Ott and J. Englsberger and O. Stasse and F. Lamiraux},
+  title = {A Continuous Approach to Legged Locomotion Planning},
+  journal = {SUBMITTED to the International Journal of Robotics Research (IJRR)},
+  year = {2012}
+}
+</pre></td>
+</tr>
+<tr id="perrin:AR:12" class="entry">
+	<td>Perrin, N., Stasse, O., Lamiraux, F. &amp; Yoshida, E.</td>
+	<td>Humanoid motion generation and swept volumes: theoretical bounds for safe steps <p class="infolinks">[<a href="javascript:toggleInfo('perrin:AR:12','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('perrin:AR:12','bibtex')">BibTeX</a>]</p></td>
+	<td>2012</td>
+	<td>SUBMITTED to Advanced Robotics&nbsp;</td>
+	<td>article</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="abs_perrin:AR:12" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: In the context of humanoid robot footstep planning based on a continuous action set, we conduct an analysis of the sensitivity of a simple walking pattern generator. Given a variation of an input vector, we calculate a bound on the variation of the volume swept by the robot lower body during the corresponding actions (steps). After numerical evaluations, we discuss the potential applications of such a bound.</td>
+</tr>
+<tr id="bib_perrin:AR:12" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{perrin:AR:12,
+  author = {N. Perrin and O. Stasse and F. Lamiraux and E. Yoshida},
+  title = {Humanoid motion generation and swept volumes: theoretical bounds for safe steps},
+  journal = {SUBMITTED to Advanced Robotics},
+  year = {2012}
+}
+</pre></td>
+</tr>
+<tr id="perrin:wafr:12" class="entry">
+	<td>Perrin, N.</td>
+	<td>From Discrete to Continuous Motion Planning <p class="infolinks">[<a href="javascript:toggleInfo('perrin:wafr:12','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('perrin:wafr:12','bibtex')">BibTeX</a>]</p></td>
+	<td>2012</td>
+	<td>Tenth International Workshop on the Algorithmic Foundations of Robotics (WAFR'12)&nbsp;</td>
+	<td>inproceedings</td>
+	<td><a href="http://ubuntuone.com/2phb7wl56vMHSkbuXuJH0r">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_perrin:wafr:12" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: In this paper, we demonstrate an equivalence between a large class of discrete motion planning problems, and piano mover’s problems, which we refer to as "continuous motion planning problems". We first prove that under some assumptions, discrete motion planning in d dimensions can be transformed into continuous motion planning in 2d+1 dimensions. Then we prove a more specific, similar equivalence for which the number of dimensions of the configuration space does not necessarily have to be increased. We study two simple cases where this theorem applies, and show that it can lead to original and efficient motion planning algorithms, which could probably be applied to a wide range of multi-contact planning problems. We apply this equivalence to a simulation of legged locomotion planning for a hexapod robot.</td>
+</tr>
+<tr id="bib_perrin:wafr:12" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{perrin:wafr:12,
+  author = {N. Perrin},
+  title = {From Discrete to Continuous Motion Planning},
+  booktitle = {Tenth International Workshop on the Algorithmic Foundations of Robotics (WAFR'12)},
+  year = {2012},
+  url = {http://ubuntuone.com/2phb7wl56vMHSkbuXuJH0r}
+}
+</pre></td>
+</tr>
+<tr id="perrin:icra:12" class="entry">
+	<td>Perrin, N., Stasse, O., Lamiraux, F., Kim, Y.J. &amp; Manocha, D.</td>
+	<td>Real-time footstep planning for humanoid robots among 3D obstacles using a hybrid bounding box <p class="infolinks">[<a href="javascript:toggleInfo('perrin:icra:12','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('perrin:icra:12','bibtex')">BibTeX</a>]</p></td>
+	<td>2012</td>
+	<td>IEEE International Conference on Robotics and Automation (ICRA'12)&nbsp;</td>
+	<td>inproceedings</td>
+	<td><a href="http://ubuntuone.com/79Vh8tWVfxfUapsz2qo9qA">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_perrin:icra:12" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: In this paper we introduce a new bounding box method for footstep planning for humanoid robots. Similar to the classic bounding box method (which uses a single rectangular box to encompass the robot) it is computationally efficient, easy to implement and can be combined with any rigid body motion planning library. However, unlike the classic bounding box method, our method takes into account the stepping over capabilities of the robot, and generates precise leg trajectories to avoid obstacles on the ground. We demonstrate that this method is well suited for footstep planning in cluttered environments.</td>
+</tr>
+<tr id="bib_perrin:icra:12" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{perrin:icra:12,
+  author = {N. Perrin and O. Stasse and F. Lamiraux and Y.~J. Kim and D. Manocha},
+  title = {Real-time footstep planning for humanoid robots among 3D obstacles using a hybrid bounding box},
+  booktitle = {IEEE International Conference on Robotics and Automation (ICRA'12)},
+  year = {2012},
+  url = {http://ubuntuone.com/79Vh8tWVfxfUapsz2qo9qA}
+}
+</pre></td>
+</tr>
+<tr id="perrin:tro:11" class="entry">
+	<td>Perrin, N., Stasse, O., Baudouin, L., Lamiraux, F. &amp; Yoshida, E.</td>
+	<td>Fast humanoid robot collision-free footstep planning using swept volume approximations <p class="infolinks">[<a href="javascript:toggleInfo('perrin:tro:11','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('perrin:tro:11','bibtex')">BibTeX</a>]</p></td>
+	<td>2012</td>
+	<td>IEEE Transactions on Robotics (T-RO)<br/>Vol. 28(2)&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://dx.doi.org/10.1109/TRO.2011.2172152">DOI</a> <a href="http://ubuntuone.com/3Qi2M3QMzEanjDxdoryvfl">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_perrin:tro:11" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: In this paper, we propose a novel and coherent framework for fast footstep planning for legged robots on a flat ground with 3D obstacle avoidance. We use swept volume approximations computed offline in order to considerably reduce the time spent in collision checking during the online planning phase, in which an RRT variant is used to find collision-free sequences of half-steps (produced by a specific walking pattern generator). Then, an original homotopy is used to smooth the sequences into natural motions avoiding gently the obstacles. The results are experimentally validated on the robot HRP-2.</td>
+</tr>
+<tr id="bib_perrin:tro:11" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{perrin:tro:11,
+  author = {N. Perrin and O. Stasse and L. Baudouin and F. Lamiraux and E. Yoshida},
+  title = {Fast humanoid robot collision-free footstep planning using swept volume approximations},
+  journal = {IEEE Transactions on Robotics (T-RO)},
+  year = {2012},
+  volume = {28},
+  number = {2},
+  url = {http://ubuntuone.com/3Qi2M3QMzEanjDxdoryvfl},
+  doi = {http://dx.doi.org/10.1109/TRO.2011.2172152}
+}
+</pre></td>
+</tr>
+<tr id="perrinthesis" class="entry">
+	<td>Perrin, N.</td>
+	<td>Footstep planning for humanoid robots: discrete and continuous approaches <p class="infolinks">[<a href="javascript:toggleInfo('perrinthesis','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('perrinthesis','bibtex')">BibTeX</a>]</p></td>
+	<td>2011</td>
+	<td><i>School</i>: Paul Sabatier University, Toulouse&nbsp;</td>
+	<td>phdthesis</td>
+	<td><a href="http://ubuntuone.com/5pkEsMvK32W29J5fCrNjQa">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_perrinthesis" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: In this thesis we investigate two types of approaches for footstep planning for humanoid robots: on one hand discrete approaches where the robot has only a finite set of possible steps, and on the other hand approaches where the robot uses continuous feasibility regions. We study these problems both on a theoretical and practical level. In particular, we describe two original, coherent and efficient methods for footstep planning, one in the discrete case (Chapter 5), and one in the continuous case (Chapter 6). We validate these methods in simulation and with several experiments on the robot HRP-2.</td>
+</tr>
+<tr id="bib_perrinthesis" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@phdthesis{perrinthesis,
+  author = {N. Perrin},
+  title = {Footstep planning for humanoid robots: discrete and continuous approaches},
+  school = {Paul Sabatier University, Toulouse},
+  year = {2011},
+  url = {http://ubuntuone.com/5pkEsMvK32W29J5fCrNjQa}
+}
+</pre></td>
+</tr>
+<tr id="Perrin:WorkshopHumanoids:11" class="entry">
+	<td>Perrin, N., Stasse, O., Baudouin, L., Lamiraux, F. &amp; Yoshida, E.</td>
+	<td>Sound and fast footstep planning for humanoid robots <p class="infolinks">[<a href="javascript:toggleInfo('Perrin:WorkshopHumanoids:11','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('Perrin:WorkshopHumanoids:11','bibtex')">BibTeX</a>]</p></td>
+	<td>2011</td>
+	<td>IEEE/RAS Int. Conf. on Humanoid Robotics, Workshop on humanoid service robot navigation in crowded and dynamic environments&nbsp;</td>
+	<td>conference</td>
+	<td><a href="http://ubuntuone.com/2GuvHG26MGlXDlK5NIv8eq">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_Perrin:WorkshopHumanoids:11" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: In this paper we present some concepts for sound and fast footstep planning. The soundness is achieved with a two-stage trajectory generation process that uses a smoothing homotopy. The fastness is achieved with swept volume approximations precomputed offline.</td>
+</tr>
+<tr id="bib_Perrin:WorkshopHumanoids:11" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{Perrin:WorkshopHumanoids:11,
+  author = {N. Perrin and O. Stasse and L. Baudouin and F. Lamiraux and E. Yoshida},
+  title = {Sound and fast footstep planning for humanoid robots},
+  booktitle = {IEEE/RAS Int. Conf. on Humanoid Robotics, Workshop on humanoid service robot navigation in crowded and dynamic environments},
+  year = {2011},
+  url = {http://ubuntuone.com/2GuvHG26MGlXDlK5NIv8eq}
+}
+</pre></td>
+</tr>
+<tr id="baudouin:humanoids:11" class="entry">
+	<td>Baudouin, L., Perrin, N., Moulard, T., Lamiraux, F., Stasse, O. &amp; Yoshida, E.</td>
+	<td>Real-time Replanning Using 3D Environment for Humanoid Robot <p class="infolinks">[<a href="javascript:toggleInfo('baudouin:humanoids:11','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('baudouin:humanoids:11','bibtex')">BibTeX</a>]</p></td>
+	<td>2011</td>
+	<td>IEEE/RAS International Conference on Humanoid Robotics (Humanoids'11)&nbsp;</td>
+	<td>inproceedings</td>
+	<td><a href="http://ubuntuone.com/6zyz487WVECpyW88tEfQz5">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_baudouin:humanoids:11" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: In this paper, we illustrate experimentally an original real-time replanning scheme and architecture for humanoid robot reactive walking. Based on a dense set of actions, our approach uses a large panel of the humanoid robot capabilities and is particularly well suited for 3D collision avoidance. Indeed A-* approaches becomes difficult in such situation, thus the method demonstrated here relies on RRT. Combined with an approximation of the volume swept by the robot legs while walking, our method is able to cope with 3D obstacles while maintaining real-time computation. We experimentally validate our approach on the robot HRP-2.</td>
+</tr>
+<tr id="bib_baudouin:humanoids:11" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{baudouin:humanoids:11,
+  author = {L. Baudouin and N. Perrin and T. Moulard and F. Lamiraux and O. Stasse and E. Yoshida},
+  title = {Real-time Replanning Using 3D Environment for Humanoid Robot},
+  booktitle = {IEEE/RAS International Conference on Humanoid Robotics (Humanoids'11)},
+  year = {2011},
+  url = {http://ubuntuone.com/6zyz487WVECpyW88tEfQz5}
+}
+</pre></td>
+</tr>
+<tr id="baudouin:WorkshopIros:11" class="entry">
+	<td>Baudouin, L., Perrin, N., Stasse, O., Moulard, T., Lamiraux, F. &amp; Yoshida, E.</td>
+	<td>Real-time Walking Path Planning with 3D Collision Avoidance <p class="infolinks">[<a href="javascript:toggleInfo('baudouin:WorkshopIros:11','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('baudouin:WorkshopIros:11','bibtex')">BibTeX</a>]</p></td>
+	<td>2011</td>
+	<td>IEEE International Conference on Intelligent Robots and Systems, Workshop on Progress and Open Problems in Motion Planning&nbsp;</td>
+	<td>conference</td>
+	<td><a href="http://ubuntuone.com/60JcRikur4gzndZAXL2BKP">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_baudouin:WorkshopIros:11" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: We illustrate an original real-time replanning scheme experimentally for humanoid robot reactive walking. Footsteps are planned as a sequence of “half-steps” that can be easily integrated with randomized planning methods such as RRT. Combined with an approximation of the volume swept by the robot legs during dynamic walking, our method is able to cope with the collision avoidance for 3D obstacles while maintaining real-time computation. We experimentally validate our approach on the robot HRP-2.</td>
+</tr>
+<tr id="bib_baudouin:WorkshopIros:11" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{baudouin:WorkshopIros:11,
+  author = {L. Baudouin and N. Perrin and O. Stasse and T. Moulard and F. Lamiraux and E. Yoshida},
+  title = {Real-time Walking Path Planning with 3D Collision Avoidance},
+  booktitle = {IEEE International Conference on Intelligent Robots and Systems, Workshop on Progress and Open Problems in Motion Planning},
+  year = {2011},
+  url = {http://ubuntuone.com/60JcRikur4gzndZAXL2BKP}
+}
+</pre></td>
+</tr>
+<tr id="perrin:iros:11" class="entry">
+	<td>Perrin, N., Stasse, O., Lamiraux, F. &amp; Yoshida, E.</td>
+	<td>Weakly collision-free paths for continuous humanoid footstep planning <p class="infolinks">[<a href="javascript:toggleInfo('perrin:iros:11','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('perrin:iros:11','bibtex')">BibTeX</a>]</p></td>
+	<td>2011</td>
+	<td>IEEE International Conference on Intelligent Robots and Systems (IROS'11)&nbsp;</td>
+	<td>inproceedings</td>
+	<td><a href="http://dx.doi.org/10.1109/IROS.2011.6048120">DOI</a> <a href="http://ubuntuone.com/1xs3AlxBi9baSEwUsUH080">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_perrin:iros:11" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: In this paper we demonstrate an original equivalence between footstep planning problems, where discrete sequences of steps are searched for, and the more classical problem of motion planning for a 2D rigid shape, where a continuous collision-free path has to be found. This equivalence enables a lot of classical motion planning techniques (such as PRM, RRT, etc.) to be applied almost effortlessly to the specific problem of footstep planning for a humanoid robot.</td>
+</tr>
+<tr id="bib_perrin:iros:11" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{perrin:iros:11,
+  author = {N. Perrin and O. Stasse and F. Lamiraux and E. Yoshida},
+  title = {Weakly collision-free paths for continuous humanoid footstep planning},
+  booktitle = {IEEE International Conference on Intelligent Robots and Systems (IROS'11)},
+  year = {2011},
+  url = {http://ubuntuone.com/1xs3AlxBi9baSEwUsUH080},
+  doi = {http://dx.doi.org/10.1109/IROS.2011.6048120}
+}
+</pre></td>
+</tr>
+<tr id="perrin:icra:11" class="entry">
+	<td>Perrin, N., Stasse, O., Lamiraux, F. &amp; Yoshida, E.</td>
+	<td>A biped walking pattern generator based on "half-steps" for dimensionality reduction <p class="infolinks">[<a href="javascript:toggleInfo('perrin:icra:11','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('perrin:icra:11','bibtex')">BibTeX</a>]</p></td>
+	<td>2011</td>
+	<td>IEEE International Conference on Robotics and Automation (ICRA'11)&nbsp;</td>
+	<td>inproceedings</td>
+	<td><a href="http://dx.doi.org/10.1109/ICRA.2011.5979917">DOI</a> <a href="http://ubuntuone.com/1UKPaUkaui6xUWSGGsaO62">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_perrin:icra:11" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: We present a new biped walking pattern generator based on "half-steps". Its key features are a) a 3-dimensional parametrization of the input space, and b) a simple homotopy that efficiently smooths the gait trajectory corresponding to a fixed sequence of steps. We show how these features can be ideally combined in the framework of sampling-based gait planning. We apply our approach to the robot HRP-2 and are able to quickly produce smooth and dynamically stable trajectories that are solutions to a difficult problem of gait planning.</td>
+</tr>
+<tr id="bib_perrin:icra:11" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{perrin:icra:11,
+  author = {N. Perrin and O. Stasse and F. Lamiraux and E. Yoshida},
+  title = {A biped walking pattern generator based on "half-steps" for dimensionality reduction},
+  booktitle = {IEEE International Conference on Robotics and Automation (ICRA'11)},
+  year = {2011},
+  url = {http://ubuntuone.com/1UKPaUkaui6xUWSGGsaO62},
+  doi = {http://dx.doi.org/10.1109/ICRA.2011.5979917}
+}
+</pre></td>
+</tr>
+<tr id="adaptapprox10" class="entry">
+	<td>Perrin, N., Stasse, O., Lamiraux, F. &amp; Yoshida, E.</td>
+	<td>Adaptive sampling-based approximation of the sign of multivariate real-valued functions <p class="infolinks">[<a href="javascript:toggleInfo('adaptapprox10','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('adaptapprox10','bibtex')">BibTeX</a>]</p></td>
+	<td>2010</td>
+	<td>&nbsp;</td>
+	<td>techreport</td>
+	<td><a href="http://hal.archives-ouvertes.fr/docs/00/54/48/91/PDF/approx.pdf">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_adaptapprox10" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: In this technical report, we present an algorithm which approximates the sign of multivariate real-valued functions through adaptive sampling, and demonstrate a convergence result. The algorithm was specifically designed for real-time robotics applications where quick evaluations are often needed.</td>
+</tr>
+<tr id="bib_adaptapprox10" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@techreport{adaptapprox10,
+  author = {N. Perrin and O. Stasse and F. Lamiraux and E. Yoshida},
+  title = {Adaptive sampling-based approximation of the sign of multivariate real-valued functions},
+  year = {2010},
+  url = {http://hal.archives-ouvertes.fr/docs/00/54/48/91/PDF/approx.pdf}
+}
+</pre></td>
+</tr>
+<tr id="herdt:iros:10" class="entry">
+	<td>Herdt, A., Perrin, N. &amp; Wieber, P.-B.</td>
+	<td>Walking without thinking about it <p class="infolinks">[<a href="javascript:toggleInfo('herdt:iros:10','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('herdt:iros:10','bibtex')">BibTeX</a>]</p></td>
+	<td>2010</td>
+	<td>IEEE International Conference on Intelligent Robots and Systems (IROS'10), pp. 190-195&nbsp;</td>
+	<td>inproceedings</td>
+	<td><a href="http://dx.doi.org/10.1109/IROS.2010.5654429">DOI</a> <a href="http://ubuntuone.com/0ommVgWCTc6kuvJgaaZUF9">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_herdt:iros:10" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: We demonstrate in this paper our motion generation sheme for the generation of stable bipedal walking motions and we expand it to enhance its flexibility and independency. An algorithm for the control of appropriate orientations of the feet and the trunk permits the robot to turn in a natural and safe way. Polygonal constraints on the positions of the computed feet positions serve to improve its reliability. A logic for the succession of the support phases and an algorithm for the automatic control of their orientations bridge the gap to more autonomy and to more practicability.</td>
+</tr>
+<tr id="bib_herdt:iros:10" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{herdt:iros:10,
+  author = {A. Herdt and N. Perrin and P.-B. Wieber},
+  title = {Walking without thinking about it},
+  booktitle = {IEEE International Conference on Intelligent Robots and Systems (IROS'10)},
+  year = {2010},
+  pages = {190--195},
+  url = {http://ubuntuone.com/0ommVgWCTc6kuvJgaaZUF9},
+  doi = {http://dx.doi.org/10.1109/IROS.2010.5654429}
+}
+</pre></td>
+</tr>
+<tr id="perrin:icra:10" class="entry">
+	<td>Perrin, N., Stasse, O., Lamiraux, F. &amp; Yoshida, E.</td>
+	<td>Approximation of Feasibility Tests for Reactive Walk on HRP-2 <p class="infolinks">[<a href="javascript:toggleInfo('perrin:icra:10','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('perrin:icra:10','bibtex')">BibTeX</a>]</p></td>
+	<td>2010</td>
+	<td>IEEE International Conference on Robotics and Automation (ICRA'10), pp. 4243-4248&nbsp;</td>
+	<td>inproceedings</td>
+	<td><a href="http://dx.doi.org/10.1109/ROBOT.2010.5509395">DOI</a> <a href="http://ubuntuone.com/3kOqnHcbqaFSrHE9eBnPTZ">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_perrin:icra:10" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: We present here an original approach to test the feasibility of footsteps for a given walking pattern generator. It is based on a new approximation algorithm intended to cope with this specific problem. The result obtained is used on the robot HRP-2, and enables it to guess a step feasibility 40,000 times faster (in 9 microseconds) than with the normal verification process. As a consequence some advance is made towards fast online motion (re)planning based on a continuous set of possible steps.</td>
+</tr>
+<tr id="bib_perrin:icra:10" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{perrin:icra:10,
+  author = {N. Perrin and O. Stasse and F. Lamiraux and E. Yoshida},
+  title = {Approximation of Feasibility Tests for Reactive Walk on HRP-2},
+  booktitle = {IEEE International Conference on Robotics and Automation (ICRA'10)},
+  year = {2010},
+  pages = {4243-4248},
+  url = {http://ubuntuone.com/3kOqnHcbqaFSrHE9eBnPTZ},
+  doi = {http://dx.doi.org/10.1109/ROBOT.2010.5509395}
+}
+</pre></td>
+</tr>
+<tr id="stasse:humanoids:09" class="entry">
+	<td>Stasse, O., Evrard, P., Perrin, N., Mansard, N. &amp; Kheddar, A.</td>
+	<td>Fast foot prints re-planning and motion generation during walking in physical human-humanoid interaction <p class="infolinks">[<a href="javascript:toggleInfo('stasse:humanoids:09','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('stasse:humanoids:09','bibtex')">BibTeX</a>]</p></td>
+	<td>2009</td>
+	<td>IEEE/RAS International Conference on Humanoid Robotics (Humanoids'09), pp. 284-289&nbsp;</td>
+	<td>inproceedings</td>
+	<td><a href="http://dx.doi.org/10.1109/ICHR.2009.5379563">DOI</a> <a href="http://ubuntuone.com/0Z7tJREH5hYdAczKYBa6oZ">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_stasse:humanoids:09" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: In this paper a system allowing real-time interaction between a human and a humanoid robot while walking is presented. The aim of this work is to integrate humanoid robots into collaborative working environment. Co-located realization of a task is one instance of such collaboration. To achieve such task whole-body motion generation while keeping balance is mandatory. This is obtained using a real-time pattern generator allowing on-line foot-print modification integrated in a stack of controllers. Several experiments of direct interaction between a human and a HRP-2 humanoid robot illustrates the results.</td>
+</tr>
+<tr id="bib_stasse:humanoids:09" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{stasse:humanoids:09,
+  author = {O. Stasse and P. Evrard and N. Perrin and N. Mansard and A. Kheddar},
+  title = {Fast foot prints re-planning and motion generation during walking in physical human-humanoid interaction},
+  booktitle = {IEEE/RAS International Conference on Humanoid Robotics (Humanoids'09)},
+  year = {2009},
+  pages = {284--289},
+  url = {http://ubuntuone.com/0Z7tJREH5hYdAczKYBa6oZ},
+  doi = {http://dx.doi.org/10.1109/ICHR.2009.5379563}
+}
+</pre></td>
+</tr>
+<tr id="Stasse:ROMAN:09" class="entry">
+	<td>Stasse, O., Perrin, N., Wieber, P.-B., Mansard, N. &amp; Lamiraux, F.</td>
+	<td>Very fast decision making for whole body motion generation with humanoid robots <p class="infolinks">[<a href="javascript:toggleInfo('Stasse:ROMAN:09','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('Stasse:ROMAN:09','bibtex')">BibTeX</a>]</p></td>
+	<td>2009</td>
+	<td>IEEE RO-MAN Workshop on Human-Synergy&nbsp;</td>
+	<td>conference</td>
+	<td><a href="http://ubuntuone.com/4NfPfaEyvuO3zX9j5mqp84">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_Stasse:ROMAN:09" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: High speed decision making to generate motion for humanoid robot is mandatory to deal with highly changing environments. Such contexts include human-robot interaction or emergency situations. We focus here on the problem of balancing. At first we explain a method allowing to plan very quickly footsteps. It is based on building an approximation function which takes as an input a transition between two steps and output a positive value if the transition is possible. An experiment on human-humanoid robot interaction illustrates the approach. In second we present a solver specifically targeted towards solving optimization problem for walking.</td>
+</tr>
+<tr id="bib_Stasse:ROMAN:09" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{Stasse:ROMAN:09,
+  author = {O. Stasse and N. Perrin and P.-B. Wieber and N. Mansard and F. Lamiraux},
+  title = {Very fast decision making for whole body motion generation with humanoid robots},
+  booktitle = {IEEE RO-MAN Workshop on Human-Synergy},
+  year = {2009},
+  url = {http://ubuntuone.com/4NfPfaEyvuO3zX9j5mqp84}
+}
+</pre></td>
+</tr>
+<tr id="Perrin:RSJ:09" class="entry">
+	<td>Perrin, N., Stasse, O., Lamiraux, F., Evrard, P. &amp; Kheddar, A.</td>
+	<td>On the Problem of Online Footsteps Correction for Humanoid Robots <p class="infolinks">[<a href="javascript:toggleInfo('Perrin:RSJ:09','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('Perrin:RSJ:09','bibtex')">BibTeX</a>]</p></td>
+	<td>2009</td>
+	<td>The 27th annual Conference of the Robotics Society of Japan&nbsp;</td>
+	<td>conference</td>
+	<td><a href="http://ubuntuone.com/3dOItFGpaZH2Li2iRhe8t7">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_Perrin:RSJ:09" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: In humanoid robotics, many applications involving walking require unfeasible footsteps to be corrected very quickly. In this paper, we introduce and discuss that issue, and expose our preliminary work and results on the topic.</td>
+</tr>
+<tr id="bib_Perrin:RSJ:09" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{Perrin:RSJ:09,
+  author = {N. Perrin and O. Stasse and F. Lamiraux and P. Evrard and A. Kheddar},
+  title = {On the Problem of Online Footsteps Correction for Humanoid Robots},
+  booktitle = {The 27th annual Conference of the Robotics Society of Japan},
+  year = {2009},
+  note = {September 15-17, Yokohama, Japan},
+  url = {http://ubuntuone.com/3dOItFGpaZH2Li2iRhe8t7}
+}
+</pre></td>
+</tr>
+<tr id="CJP-lmcs08" class="entry">
+	<td>Comon-Lundh, H., Jacquemard, F. &amp; Perrin, N.</td>
+	<td>Visibly Tree Automata with Memory and Constraints <p class="infolinks">[<a href="javascript:toggleInfo('CJP-lmcs08','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('CJP-lmcs08','bibtex')">BibTeX</a>]</p></td>
+	<td>2008</td>
+	<td>Logical Methods in Computer Science<br/>Vol. 4(2:8), pp. 284-289&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://dx.doi.org/10.2168/LMCS-4(2:8)2008">DOI</a> <a href="http://ubuntuone.com/32qYgEmrdrQnTrLBZTUu28">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_CJP-lmcs08" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Tree automata with one memory have been introduced in 2001. They generalize both pushdown (word) automata and the tree automata with constraints of equality between brothers of Bogaert and Tison. Though it has a decidable emptiness problem, the main weakness of this model is its lack of good closure properties. We propose a generalization of the visibly pushdown automata of Alur and Madhusudan to a family of tree recognizers which carry along their (bottom-up) computation an auxiliary unbounded memory with a tree structure (instead of a symbol stack). In other words, these recognizers, called Visibly Tree Automata with Memory (VTAM) define a subclass of tree automata with one memory enjoying Boolean closure properties. We show in particular that they can be determinized and the problems like emptiness, membership, inclusion and universality are decidable for VTAM. Moreover, we propose several extensions of VTAM whose transitions may be constrained by different kinds of tests between memories and also constraints a la Bogaert and Tison. We show that some of these classes of constrained VTAM keep the good closure and decidability properties, and we demonstrate their expressiveness with relevant examples of tree languages.</td>
+</tr>
+<tr id="bib_CJP-lmcs08" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{CJP-lmcs08,
+  author = {Comon-Lundh, Hubert and Jacquemard, Florent and Perrin, Nicolas},
+  title = {Visibly Tree Automata with Memory and Constraints},
+  journal = {Logical Methods in Computer Science},
+  year = {2008},
+  volume = {4},
+  number = {2:8},
+  pages = {284--289},
+  url = {http://ubuntuone.com/32qYgEmrdrQnTrLBZTUu28},
+  doi = {http://dx.doi.org/10.2168/LMCS-4(2:8)2008}
+}
+</pre></td>
+</tr>
+<tr id="CJP-fossacs07" class="entry">
+	<td>Comon-Lundh, H., Jacquemard, F. &amp; Perrin, N.</td>
+	<td>Tree Automata with Memory, Visibility and Structural Constraints <p class="infolinks">[<a href="javascript:toggleInfo('CJP-fossacs07','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('CJP-fossacs07','bibtex')">BibTeX</a>]</p></td>
+	<td>2007</td>
+	<td>10th International Conference on Foundations of Software Science and Computation Structures (FoSSaCS'07), pp. 168-182&nbsp;</td>
+	<td>inproceedings</td>
+	<td><a href="http://dx.doi.org/10.1007/978-3-540-71389-0_13">DOI</a> <a href="http://ubuntuone.com/7bwApJ66ANcJTtAnSs8OKS">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_CJP-fossacs07" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Tree automata with one memory have been introduced in 2001. They generalize both pushdown (word) automata and the tree automata with constraints of equality between brothers of Bogaert and Tison. Though it has a decidable emptiness problem, the main weakness of this model is its lack of good closure properties. We propose a generalization of the visibly pushdown automata of Alur and Madhusudan to a family of tree recognizers which carry along their (bottom-up) computation an auxiliary unbounded memory with a tree structure (instead of a symbol stack). In other words, these recognizers, called visibly Tree Automata with Memory (VTAM) define a subclass of tree automata with one memory enjoying Boolean closure properties. We show in particular that they can be determinized and the problems like emptiness, inclusion and universality are decidable for VTAM. Moreover, we propose an extension of VTAM whose transitions may be constrained by structural equality and disequality tests between memories, and show that this extension preserves the good closure and decidability properties.</td>
+</tr>
+<tr id="bib_CJP-fossacs07" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{CJP-fossacs07,
+  author = {Comon-Lundh, Hubert and Jacquemard, Florent and Perrin, Nicolas},
+  title = {Tree Automata with Memory, Visibility and Structural Constraints},
+  booktitle = {10th International Conference on Foundations of Software Science and Computation Structures (FoSSaCS'07)},
+  publisher = {Springer},
+  year = {2007},
+  pages = {168-182},
+  url = {http://ubuntuone.com/7bwApJ66ANcJTtAnSs8OKS},
+  doi = {http://dx.doi.org/10.1007/978-3-540-71389-0_13}
+}
+</pre></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+ <small>Created by <a href="http://jabref.sourceforge.net">JabRef</a> on 18/07/2012.</small>
+</p>
+
+</body>
+</html>
+
+<!-- File generated by JabRef ; Export Filter written by Mark Schenk -->
